@@ -109,10 +109,9 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 # 6. База ошибок (клонирование или обновление)
-$owner = ""
-try {
-    $owner = gh api user --jq .login 2>$null
-} catch { }
+# Репозиторий принадлежит автору комплекта (KrivolapovDani).
+# Если репозиторий приватный — нужен доступ от владельца (collaborator).
+$owner = "KrivolapovDani"
 
 if ($owner) {
     $repoUrl = "https://github.com/$owner/oshibki-kollegam.git"
