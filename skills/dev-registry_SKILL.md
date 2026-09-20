@@ -1,0 +1,73 @@
+---
+name: dev-registry
+description: Реестр инструментов и окружения разработчика: версии, команды, известные ловушки Windows/PowerShell/Python/Node/Git/uv/winget, способы проверки актуальности и deprecations. Use when задача затрагивает инструменты, версии, команды, установку, ошибки окружения, переключение версий Python, пути.
+---
+
+# Реестр инструментов разработчика
+
+Машина: Windows 10 Pro, PowerShell 5.1. Точные версии — ниже, обновление/
+проверку — командами из «Способы проверки». При сомнении — сверяться с
+документацией, а не выдумывать.
+
+## Установленное окружение (проверено 2026-09-19)
+
+| Инструмент | Версия | Как проверить |
+|---|---|---|
+| Git for Windows | 2.55.0 | `git --version` |
+| Python (py-лаунчер) | 3.13.15 + 3.11.9 | `py -0`, `py -3.13 --version` |
+| VS Code | 1.138.0 | `code --version` |
+| GitHub CLI (portable) | 2.101.0 | `portable\gh\gh.exe --version` |
+| Node.js | 24.20.0 | `node --version` |
+| npm / npx | с Node | `npm.cmd --version` (PowerShell блокирует npx.ps1 — используй `cmd /c npx ...` или `npx.cmd`) |
+| uv | 0.12.17 | `uv --version` |
+| winget | 1.29.290 | `winget --version` |
+| officecli | 1.0.151 | `officecli --version` |
+
+Полный манифест: `C:\Users\ИМЯ_ПОЛЬЗОВАТЕЛЯ\Desktop\Рабочая папка ИИ\Установлено ИИ\УСТАНОВЛЕНО.md`
+
+## Ключевые правила окружения (ловушки Windows)
+
+1. **PowerShell 5.1 ≠ PowerShell 7.** Разные модули/поведение; `$PSVersionTable`.
+2. **`python` из WindowsApps — заглушка** (открывает магазин), если не стоит
+   реальный Python. После установки через winget проверить источник:
+   `(Get-Command python).Source`. Настоящие: `Python311\python.exe`, `Python313`.
+3. **Переключение версий Python:** `py -3.13` / `py -3.11` (py-лаунчер).
+   Пакеты — ТОЛЬКО в venv: `uv venv --python 3.13`, `uv pip install <pkg>`.
+4. **npx.ps1 блокируется PowerShell.** Для MCP-серверов на npx в конфиге
+   opencode используется `cmd /c npx -y ...` — работает через npx.cmd.
+5. **Пути с пробелами и кириллицей** — всегда кавычки; PowerShell: `-LiteralPath`.
+6. **Кодировки:** консоль может давать «кракозябры»; задавай UTF-8 явно.
+7. **winget:** установщики в «Установлено ИИ\installers»; MSI с Machine-скопом
+   (GitHub CLI) в пользовательской сессии не ставится — portable вариант.
+
+## Способы проверки актуальности
+
+- Версии Python/пакетов: `pip show <pkg>`, `uv pip list`.
+- Deprecations: официальные changelog (ctypes, argparse deprecated не стареют
+  молча — проверять по документации пакета).
+- Модули opencode: `opencode.jsonc`, MCP — список в `02_mcp_готовые/mcp_config.md`.
+
+## Известные ловушки по стеку
+
+- **Python:** `open()` без явной кодировки на Windows; `Path` вместо строк;
+  глобальный pip не ставь — uv.
+- **Node:** старые версии Node в winget (24 есть); для MCP используй командную
+  строку через cmd.
+- **Git:** на `main` — защита (push protected); `git config core.autocrlf`
+  на Windows версии выставлять осознанно.
+- **PowerShell:** `$Error` ≠ собственные исключения; стримы и try/catch 5.1
+  ограничены; запрет выполнять `irm | iex` от неофициальных источников.
+- **officecli (docx/xlsx/pptx):** inline-JSON в batch ломается кавычками
+  PowerShell — пиши JSON в файл и вызывай `officecli batch <файл> --input <json>`;
+  при блокировке файла (POWERPNT/WINWORD/EXCEL держат открытым) — сначала
+  `officecli close <файл>`, затем проверь `Get-Process`; НЕ убивай процесс
+  officecli (`Stop-Process`) — это MCP-сервер, инструмент `officecli_officecli`
+  пропадёт до перезапуска opencode.
+
+## Протокол обновления
+
+1. Одно изменение — одна цель (не «поставь всё»).
+2. Скачать установщик в `Установлено ИИ\installers`, проверить хэш.
+3. Установить, проверить командой из таблицы.
+4. Обновить манифест `УСТАНОВЛЕНО.md` и этот реестр.
+5. Если что-то сломалось — откат по манифесту (правило деградации проекта).
