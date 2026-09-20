@@ -1,0 +1,44 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  // Агент «Разработчик»: промт подтягивается из файла prompts/dev.txt
+  // автоматически. Ничего вставлять не нужно — переключись на агента
+  // клавишей Tab (или выбери в списке агентов).
+  "agent": {
+    "developer": {
+      "mode": "primary",
+      "description": "Разработчик: Python, веб, PowerShell/автоматизация, Git/CI-CD, безопасность, обучение программированию. Лёгкий промт + 6 dev-скилов.",
+      "prompt": "{file:./prompts/dev.txt}",
+      "temperature": 0.2
+    }
+  },
+  // Скилы: НЕ указывай paths — они уже лежат в глобальной папке
+  // %USERPROFILE%\.config\opencode\skills\ (см. 00_ЧЕК_ЛИСТ_УСТАНОВКИ.md,
+  // Шаг 1, вариант 1). opencode находит их сам. Если положил в другое
+  // место — замени путь ниже:
+  "skills": {
+    "paths": ["C:/Users/ИМЯ_ПОЛЬЗОВАТЕЛЯ/.config/opencode/skills"]
+  },
+  "mcp": {
+    "memory": {
+      "type": "local",
+      "command": ["cmd", "/c", "npx", "-y", "@modelcontextprotocol/server-memory"],
+      "environment": { "MEMORY_FILE_PATH": "C:/Users/ИМЯ_ПОЛЬЗОВАТЕЛЯ/.config/opencode/memory.jsonl" },
+      "enabled": true
+    },
+    "sequentialthinking": {
+      "type": "local",
+      "command": ["cmd", "/c", "npx", "-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "enabled": true
+    },
+    "fetch": {
+      "type": "local",
+      "command": ["C:/Users/ИМЯ_ПОЛЬЗОВАТЕЛЯ/.local/bin/mcp-server-fetch.exe"],
+      "enabled": true
+    },
+    "time": {
+      "type": "local",
+      "command": ["C:/Users/ИМЯ_ПОЛЬЗОВАТЕЛЯ/.local/bin/mcp-server-time.exe"],
+      "enabled": true
+    }
+  }
+}

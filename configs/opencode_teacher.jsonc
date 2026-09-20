@@ -1,0 +1,43 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  // Агент «Педагог-методист»: промт подтягивается из файла prompts/v6.txt
+  // автоматически. Ничего вставлять не нужно — переключись на агента
+  // клавишей Tab (или выбери в списке агентов).
+  "agent": {
+    "teacher": {
+      "mode": "primary",
+      "description": "Педагог-методист: рабочие программы, уроки, сравнительный анализ методов, оценивание, ОВЗ, внеурочка. Работает по ФГОС/ФОП/ФАОП/СанПиН.",
+      "prompt": "{file:./prompts/v6.txt}",
+      "temperature": 0.3
+    }
+  },
+  // Скилы: НЕ указывай paths — они уже лежат в глобальной папке
+  // %USERPROFILE%\.config\opencode\skills\ (см. УСТАНОВКА.md).
+  // opencode находит их сам. Если положил в другое место — замени путь ниже:
+  "skills": {
+    "paths": ["C:/Users/ИМЯ_ПОЛЬЗОВАТЕЛЯ/.config/opencode/skills"]
+  },
+  "mcp": {
+    "memory": {
+      "type": "local",
+      "command": ["cmd", "/c", "npx", "-y", "@modelcontextprotocol/server-memory"],
+      "environment": { "MEMORY_FILE_PATH": "C:/Users/ИМЯ_ПОЛЬЗОВАТЕЛЯ/.config/opencode/memory.jsonl" },
+      "enabled": true
+    },
+    "sequentialthinking": {
+      "type": "local",
+      "command": ["cmd", "/c", "npx", "-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "enabled": true
+    },
+    "fetch": {
+      "type": "local",
+      "command": ["C:/Users/ИМЯ_ПОЛЬЗОВАТЕЛЯ/.local/bin/mcp-server-fetch.exe"],
+      "enabled": true
+    },
+    "time": {
+      "type": "local",
+      "command": ["C:/Users/ИМЯ_ПОЛЬЗОВАТЕЛЯ/.local/bin/mcp-server-time.exe"],
+      "enabled": true
+    }
+  }
+}

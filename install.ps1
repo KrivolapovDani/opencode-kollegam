@@ -28,13 +28,12 @@ New-Item -ItemType Directory -Path $promptsDir -Force | Out-Null
 Copy-Item -Path (Join-Path $src "prompts\*") -Destination $promptsDir -Force -Recurse
 Write-Host "[OK] Промты скопированы: $promptsDir"
 
-# 3. Копирование скилов (файлы вида имя_SKILL.md -> папка имя\SKILL.md)
+# 3. Копирование скилов (папки имя\SKILL.md)
 New-Item -ItemType Directory -Path $skillsDir -Force | Out-Null
-Get-ChildItem -Path (Join-Path $src "skills") -Filter "*_SKILL.md" | ForEach-Object {
-    $skillName = $_.Name -replace "_SKILL\.md$", ""
-    $dest = Join-Path $skillsDir $skillName
+Get-ChildItem -Path (Join-Path $src "skills") -Directory | ForEach-Object {
+    $dest = Join-Path $skillsDir $_.Name
     New-Item -ItemType Directory -Path $dest -Force | Out-Null
-    Copy-Item -Path $_.FullName -Destination (Join-Path $dest "SKILL.md") -Force
+    Copy-Item -Path (Join-Path $_.FullName "SKILL.md") -Destination (Join-Path $dest "SKILL.md") -Force
 }
 Write-Host "[OK] Скилы скопированы: $skillsDir"
 
