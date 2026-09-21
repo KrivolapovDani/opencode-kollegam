@@ -283,7 +283,9 @@ GitHub CLI, uv 0.12 (управление Python), winget. Точные верс
    (3–5 строк): что это, как установить, основные функции, ссылка на GitHub.
    Текст: «Комплект opencode: педагог-методист + разработчик (оба агента,
    13 скилов, общая база ошибок). Установка: вставьте в opencode "Установи
-   комплект по ссылке https://github.com/KrivolapovDani/opencode-kollegam".
+   комплект по ссылке https://github.com/KrivolapovDani/opencode-kollegam"
+   или без GitHub — ZIP:
+   https://github.com/KrivolapovDani/opencode-kollegam/archive/refs/heads/master.zip
    Функции: рабочие программы,
    уроки, презентации, документы Office, автоматизация, обучение
    программированию. Подробнее: https://github.com/KrivolapovDani/opencode-kollegam»

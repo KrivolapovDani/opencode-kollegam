@@ -5,6 +5,16 @@
 # Установка по ссылке (в opencode напишите):
 #   Установи комплект по ссылке https://github.com/KrivolapovDani/opencode-kollegam
 # Агент выполнит: git clone + этот скрипт.
+#
+# Режимы запуска:
+#   install.ps1              — обычная установка (git, если есть; иначе ZIP)
+#   install.ps1 -Offline     — без GitHub: без входа в GitHub, база ошибок ZIP-ом
+#   install.ps1 -Offline -SkipOshibki  — совсем без сети: база ошибок не качается
+
+param(
+    [switch]$Offline,
+    [switch]$SkipOshibki
+)
 
 $ErrorActionPreference = "Stop"
 
@@ -97,48 +107,91 @@ if (-not (Test-Path $configPath)) {
     Write-Host "[OK] Конфиг opencode уже есть (не трогаем): $configPath"
 }
 
-# 5. Вход в GitHub
-gh auth status 2>$null | Out-Null
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "[.] Нужен вход в GitHub. Откроется браузер — подтвердите вход."
-    gh auth login --web
+# 5. Вход в GitHub (необязательно; пропускается в режиме -Offline)
+if ($Offline) {
+    Write-Host "[OK] Режим -Offline: вход в GitHub пропущен"
+} elseif (Get-Command gh -ErrorAction SilentlyContinue) {
+    gh auth status 2>$null | Out-Null
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "[!] Вход не выполнен. Повторите позже: gh auth login --web"
-    } else {
-        Write-Host "[OK] Вход в GitHub выполнен"
-    }
-} else {
-    Write-Host "[OK] GitHub уже подключён"
-}
-
-# 6. База ошибок (клонирование или обновление)
-# Репозиторий принадлежит автору комплекта (KrivolapovDani).
-$owner = "KrivolapovDani"
-
-if ($owner) {
-    $repoUrl = "https://github.com/$owner/oshibki-kollegam.git"
-    if (-not (Test-Path $oshibkiDir)) {
-        git clone $repoUrl $oshibkiDir 2>$null
-        if ($LASTEXITCODE -eq 0) {
-            Write-Host "[OK] База ошибок склонирована: $oshibkiDir"
+        Write-Host "[.] Вход в GitHub не выполнен. Откроется браузер — подтвердите вход (или закройте окно, чтобы пропустить)."
+        gh auth login --web
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "[!] Вход не выполнен. Это не мешает установке: база ошибок скачается ZIP-ом."
         } else {
-            Write-Host "[!] Не удалось склонировать базу ошибок ($repoUrl)."
-            Write-Host "    Проверьте, что репозиторий oshibki-kollegam существует у владельца."
+            Write-Host "[OK] Вход в GitHub выполнен"
         }
     } else {
-        git -C $oshibkiDir pull 2>$null
-        if ($LASTEXITCODE -eq 0) {
-            Write-Host "[OK] База ошибок обновлена: $oshibkiDir"
+        Write-Host "[OK] GitHub уже подключён"
+    }
+} else {
+    Write-Host "[OK] gh не установлен — вход в GitHub пропущен (для установки не нужен)"
+}
+
+# 6. База ошибок (git, если есть; иначе — ZIP без git)
+# Репозиторий принадлежит автору комплекта (KrivolapovDani).
+$owner = "KrivolapovDani"
+$oshibkiRepo = "oshibki-kollegam"
+$oshibkiBranch = "master"
+
+function Update-OshibkiFromZip {
+    param([string]$DestDir)
+    $zipUrl = "https://github.com/$owner/$oshibkiRepo/archive/refs/heads/$oshibkiBranch.zip"
+    $zipPath = Join-Path $env:TEMP "$oshibkiRepo.zip"
+    $extractDir = Join-Path $env:TEMP "$oshibkiRepo-extract"
+    try {
+        Write-Host "[.] Скачиваю базу ошибок ZIP-ом (без git)..."
+        Invoke-WebRequest -Uri $zipUrl -OutFile $zipPath -UseBasicParsing
+        if (Test-Path $extractDir) { Remove-Item -LiteralPath $extractDir -Recurse -Force }
+        Expand-Archive -LiteralPath $zipPath -DestinationPath $extractDir -Force
+        $inner = Get-ChildItem -LiteralPath $extractDir -Directory | Select-Object -First 1
+        if (-not $inner) { throw "В архиве нет папки" }
+        New-Item -ItemType Directory -Path $DestDir -Force | Out-Null
+        Copy-Item -Path (Join-Path $inner.FullName "*") -Destination $DestDir -Recurse -Force
+        Write-Host "[OK] База ошибок скачана ZIP-ом: $DestDir"
+        return $true
+    } catch {
+        Write-Host "[!] Не удалось скачать базу ошибок ZIP-ом: $($_.Exception.Message)"
+        Write-Host "    Ядро комплекта установлено. Базу ошибок можно подключить позже (повторный запуск install.ps1)."
+        return $false
+    }
+}
+
+if ($owner) {
+    if ($SkipOshibki) {
+        Write-Host "[OK] -SkipOshibki: база ошибок пропущена"
+    } else {
+        $gitAvailable = [bool](Get-Command git -ErrorAction SilentlyContinue)
+        $isGitClone = Test-Path (Join-Path $oshibkiDir ".git")
+        if ($gitAvailable -and -not $Offline) {
+            if (-not (Test-Path $oshibkiDir)) {
+                git clone "https://github.com/$owner/$oshibkiRepo.git" $oshibkiDir 2>$null
+                if ($LASTEXITCODE -eq 0) {
+                    Write-Host "[OK] База ошибок склонирована: $oshibkiDir"
+                } else {
+                    Write-Host "[!] git clone не удался — пробую ZIP..."
+                    Update-OshibkiFromZip -DestDir $oshibkiDir | Out-Null
+                }
+            } elseif ($isGitClone) {
+                git -C $oshibkiDir pull 2>$null
+                if ($LASTEXITCODE -eq 0) {
+                    Write-Host "[OK] База ошибок обновлена: $oshibkiDir"
+                } else {
+                    Write-Host "[!] git pull не удался — пробую ZIP..."
+                    Update-OshibkiFromZip -DestDir $oshibkiDir | Out-Null
+                }
+            } else {
+                Update-OshibkiFromZip -DestDir $oshibkiDir | Out-Null
+            }
         } else {
-            Write-Host "[!] Не удалось обновить базу ошибок. Проверьте git в папке $oshibkiDir"
+            Update-OshibkiFromZip -DestDir $oshibkiDir | Out-Null
         }
     }
 } else {
     Write-Host "[!] Не удалось определить GitHub-логин. База ошибок не подключена."
 }
 
-# 6a. Обновление комплекта (если папка — клон репозитория)
-if (Test-Path (Join-Path $src ".git")) {
+# 6a. Обновление комплекта (если папка — клон репозитория; в -Offline пропускаем)
+if (-not $Offline -and (Test-Path (Join-Path $src ".git"))) {
     git -C $src pull 2>$null
     if ($LASTEXITCODE -eq 0) {
         Write-Host "[OK] Комплект обновлён (git pull)"
